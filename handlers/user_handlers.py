@@ -47,6 +47,15 @@ async def process_start_command(message: Message):
             'Чтобы вызвать справку - отправьте команду - /help'
     )
 
+@router.message(Command(commands='help'), StateFilter(default_state))
+async def process_help_command(message: Message):
+    await message.answer(
+        text='Программа «Near-miss» — это система учета и анализа инцидентов, которые могли бы привести к несчастным случаям, но были предотвращены в последний момент.\n'
+             'Основной целью программы является предотвращение будущих инцидентов путем идентификации и устранения потенциальных опасностей.\n'
+             'Несчастные случаи на производстве могут привести к тяжелым травмам, потере рабочей силы и, в крайнем случае, к смерти.\n'
+             'Кроме того, они могут привести к существенным финансовым потерям для компании в виде штрафов, компенсаций и потери репутации.'
+    )
+
 @router.message(Command(commands='cancel'), StateFilter(default_state))
 async def process_cancel_command(message: Message):
     await message.answer(
