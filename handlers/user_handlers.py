@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from aiogram import Bot, Dispatcher, F, Router
+from aiogram import Bot, Dispatcher, F, Router, types
 from aiogram.filters import Command, CommandStart, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state, State, StatesGroup
@@ -10,6 +10,7 @@ from aiogram.types import (CallbackQuery,
                            InlineKeyboardMarkup,
                            Message,
                            PhotoSize)
+from database.database import save_user_data, get_all_mistakes
 
 router = Router()
 
@@ -22,7 +23,7 @@ storage = MemoryStorage() #NEED TO REPLACE
 bot = Bot(BOT_TOKEN)
 #dp = Dispatcher(storage=storage)
 
-user_dict: dict[int, dict[str, str | int | bool]] = {}
+#user_dict: dict[int, dict[str, str | int | bool]] = {}
 
 class FSMFillForm(StatesGroup):
 
@@ -50,10 +51,14 @@ async def process_start_command(message: Message):
 @router.message(Command(commands='help'), StateFilter(default_state))
 async def process_help_command(message: Message):
     await message.answer(
-        text='Программа «Near-miss» — это система учета и анализа инцидентов, которые могли бы привести к несчастным случаям, но были предотвращены в последний момент.\n'
-             'Основной целью программы является предотвращение будущих инцидентов путем идентификации и устранения потенциальных опасностей.\n'
-             'Несчастные случаи на производстве могут привести к тяжелым травмам, потере рабочей силы и, в крайнем случае, к смерти.\n'
-             'Кроме того, они могут привести к существенным финансовым потерям для компании в виде штрафов, компенсаций и потери репутации.'
+        text='Программа «Near-miss» — это система учета и анализа инцидентов, которые могли бы привести к несчастным '
+             'случаям, но были предотвращены в последний момент.\n'
+             'Основной целью программы является предотвращение будущих инцидентов путем идентификации и устранения '
+             'потенциальных опасностей.\n'
+             'Несчастные случаи на производстве могут привести к тяжелым травмам, потере рабочей силы и, '
+             'в крайнем случае, к смерти.\n'
+             'Кроме того, они могут привести к существенным финансовым потерям для компании в виде штрафов, '
+             'компенсаций и потери репутации.'
     )
 
 @router.message(Command(commands='cancel'), StateFilter(default_state))
@@ -81,8 +86,12 @@ async def process_mistake_command(message: Message, state: FSMContext):
 @router.message(StateFilter(FSMFillForm.fill_name), F.text.isalpha())
 async def process_name_sent(message:Message, state: FSMContext):
     await state.update_data(name=message.text)
+
+    await save_user_info(message, state)
+
     await message.answer(text='Благодарю!\n\n'
                               'Теперь укажите краткую информацию о нарушении')
+
     await state.set_state(FSMFillForm.fill_mistake)
 
 @router.message(StateFilter(FSMFillForm.fill_name))
@@ -96,9 +105,14 @@ async def warning_not_name(message: Message):
 
 @router.message(StateFilter(FSMFillForm.fill_mistake))
 async def process_mistake_sent(message: Message, state: FSMContext):
+
     await state.update_data(mistake=message.text)
+
+    await save_user_info(message, state)
+
     await message.answer(text='Благодарю!\n\n'
                               'Теперь укажите подробную информацию о нарушении')
+
     await state.set_state(FSMFillForm.fill_description)
 
 #NEED TO ADD HANDLER, CATCHING MISTAKE WITH MISTAKE ERROR
@@ -122,9 +136,13 @@ async def process_description_sent(message: Message, state: FSMContext):
         [low_level_button, medium_level_button, high_level_button]
     ]
     markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+    await save_user_info(message, state)
+
     await message.answer(text='Благодарю!\n\n'
                               'Теперь укажите предполагаемый уровень опасности',
                          reply_markup=markup)
+
     await state.set_state(FSMFillForm.fill_level)
 
 
@@ -133,7 +151,11 @@ async def process_description_sent(message: Message, state: FSMContext):
 #            F.data.in_(['low', 'medium', 'high']))
 async def process_level_press(callback: CallbackQuery, state: FSMContext):
     await state.update_data(level=callback.data)
+
+    await save_user_info(callback.message, state)
+
     await callback.message.delete()
+
     await callback.message.answer(
         text='Благодарю! Укажите помещение/место нарушения'
     )
@@ -151,6 +173,9 @@ async def warning_not_level(message: Message):
 @router.message(StateFilter(FSMFillForm.fill_place))
 async def process_place_sent(message: Message, state: FSMContext):
     await state.update_data(place=message.text)
+
+    await save_user_info(message, state)
+
     await message.answer(text='Благодарю!\n\n'
                               'Теперь загрузите фотографию нарушения')
     await state.set_state(FSMFillForm.upload_photo)
@@ -167,11 +192,27 @@ async def process_photo_sent(message: Message,
         photo_id=latest_photo.file_id
     )
 
-    user_dict[user_id] = await state.get_data()
+    await save_user_info(message, state)
+
+    #user_dict[user_id] = await state.get_data()
     #user_dict[latest_photo.from_user.id] = await state.get_data()
     await state.clear()
     await message.answer(
         text='Благодарю! Ваша заявка зарегистрирована.\n'
         'Сотрудники Отдела охраны труда обработают его в '
         'установленные сроки и сообщат о результатах рассмотрения'
+    )
+
+
+async def save_user_info(message: Message, state: FSMContext):
+    user_data = await state.get_data()
+
+    save_user_data(
+        user_id=message.from_user.id,
+        name=user_data.get('name', ''),
+        mistake=user_data.get('mistake', ''),
+        description=user_data.get('description', ''),
+        level=user_data.get('level', ''),
+        place=user_data.get('place', ''),
+        photo=None
     )

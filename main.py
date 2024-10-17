@@ -5,12 +5,14 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from config_data.config import Config, load_config
+from database.database import init_db
 from handlers import user_handlers
 from keyboards.main_menu import set_main_menu
 
 logger = logging.getLogger(__name__)
 
 async def main():
+    init_db()
     logging.basicConfig(
         level=logging.INFO,
         format='%(filename)s:%(lineno)d #%(levelname)-8s '
