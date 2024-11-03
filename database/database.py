@@ -2,7 +2,6 @@ import os
 import psycopg2
 from dotenv import load_dotenv
 import asyncpg
-import asyncio
 
 load_dotenv()
 
@@ -22,7 +21,6 @@ def connection():
 
 async def insert_user_name(user_id: int, name:str):
     conn = await asyncpg.connect(DATABASE)
-    # await conn.execute('''
     result = await conn.fetchrow('''
         INSERT INTO user_mistakes(user_id, name)
         VALUES ($1, $2)
@@ -31,58 +29,67 @@ async def insert_user_name(user_id: int, name:str):
     await conn.close()
     return result['id']
 
-async def insert_mistake(mistake: str, id: int):
+async def insert_mistake(mistake: str, id_: int):
     conn = await asyncpg.connect(DATABASE)
-    existing_record = await conn.fetchrow('SELECT * FROM user_mistakes WHERE id = $1', id)
+    existing_record = await conn.fetchrow('SELECT * FROM user_mistakes WHERE id = $1', id_)
 
     if existing_record:
         await conn.execute('''
             UPDATE user_mistakes
             SET mistake = $1
             WHERE id = $2''',
-                           mistake, id)
+                           mistake, id_)
     else:
-        print(f'Запись с id {id} не найдена. Ошибка не сохранена.')
+        print(f'Запись с id {id_} не найдена. Ошибка не сохранена.')
     await conn.close()
 
-async def insert_description(description: str, id: int):
+async def insert_description(description: str, id_: int):
     conn = await asyncpg.connect(DATABASE)
-    existing_record = await conn.fetchrow('SELECT * FROM user_mistakes WHERE id = $1', id)
+    existing_record = await conn.fetchrow('SELECT * FROM user_mistakes WHERE id = $1', id_)
 
     if existing_record:
         await conn.execute('''
         UPDATE user_mistakes
         SET description = $1
         WHERE id = $2''',
-                           description, id)
+                           description, id_)
     else:
-        print(f'Запись с id {id} не найдена. Ошибка не сохранена.')
+        print(f'Запись с id {id_} не найдена. Ошибка не сохранена.')
     await conn.close()
 
-async def insert_level(level: str, id: int):
+async def insert_level(level: str, id_: int):
     conn = await asyncpg.connect(DATABASE)
-    existing_record = await conn.fetchrow('SELECT * FROM user_mistakes WHERE id = $1', id)
+    existing_record = await conn.fetchrow('SELECT * FROM user_mistakes WHERE id = $1', id_)
 
     if existing_record:
         await conn.execute('''
         UPDATE user_mistakes
         SET level = $1
         WHERE id = $2''',
-                           level, id)
+                           level, id_)
     else:
-        print(f'Запись с id {id} не найдена. Ошибка не сохранена.')
+        print(f'Запись с id {id_} не найдена. Ошибка не сохранена.')
     await conn.close()
 
-async def insert_place(place: str, id: int):
+async def insert_place(place: str, id_: int):
     conn = await asyncpg.connect(DATABASE)
-    existing_record = await conn.fetchrow('SELECT * FROM user_mistakes WHERE id = $1', id)
+    existing_record = await conn.fetchrow('SELECT * FROM user_mistakes WHERE id = $1', id_)
 
     if existing_record:
         await conn.execute('''
         UPDATE user_mistakes
         SET place = $1
         WHERE id = $2''',
-                           place, id)
+                           place, id_)
     else:
-        print(f'Запись с id {id} не найдена. Ошибка не сохранена.')
+        print(f'Запись с id {id_} не найдена. Ошибка не сохранена.')
+    await conn.close()
+
+async def insert_photo(photo_url: str, id_: int):
+    conn = await asyncpg.connect(DATABASE)
+    await conn.execute('''
+    UPDATE user_mistakes
+    SET photo = $1
+    WHERE id = $2''',
+                       photo_url, id_)
     await conn.close()

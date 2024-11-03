@@ -1,12 +1,9 @@
 import os
-import asyncio
-import asyncpg
 from dotenv import load_dotenv
-from aiogram import Bot, Dispatcher, F, Router, types
+from aiogram import Bot, F, Router
 from aiogram.filters import Command, CommandStart, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state, State, StatesGroup
-from aiogram.fsm.storage.memory import MemoryStorage #NOT USING
 from aiogram.types import (CallbackQuery,
                            InlineKeyboardButton,
                            InlineKeyboardMarkup,
@@ -14,9 +11,9 @@ from aiogram.types import (CallbackQuery,
                            PhotoSize)
 from database.database import (insert_user_name,
                                insert_mistake,
-                                insert_level,
-                                insert_description,
-                                insert_place)
+                               insert_level,
+                               insert_description,
+                               insert_place, insert_photo)
 
 router = Router()
 
@@ -25,9 +22,6 @@ load_dotenv()
 BOT_TOKEN=os.getenv('BOT_TOKEN')
 
 bot = Bot(BOT_TOKEN)
-#dp = Dispatcher(storage=storage)
-
-#user_dict: dict[int, dict[str, str | int | bool]] = {}
 
 class FSMFillForm(StatesGroup):
 
@@ -40,14 +34,6 @@ class FSMFillForm(StatesGroup):
     upload_photo = State()
     #So, need to add  yagpt question may be and help
 
-class FSMUserMistake(StatesGroup):
-    waiting_name = State()
-    waiting_mistake = State()
-    waiting_description = State()
-    waiting_level = State()
-    waiting_place = State()
-    waiting_date = State()
-    waiting_photo = State()
 
 @router.message(CommandStart(), StateFilter(default_state))
 async def process_start_command(message: Message):
@@ -100,7 +86,6 @@ async def process_name_sent(message:Message, state: FSMContext):
     user_id = message.from_user.id
     name = message.text
     generated_id = await insert_user_name(user_id, name)
-    #await insert_user_name(user_id, name)
 
     await state.update_data(name=name, id=generated_id)
     await message.answer(text='Благодарю!\n\n'
@@ -121,12 +106,10 @@ async def warning_not_name(message: Message):
 async def process_mistake_sent(message: Message, state: FSMContext):
 
     user_data = await state.get_data()
-    user_id = message.from_user.id
-    id = user_data.get('id')
+    id_ = user_data.get('id')
     mistake = message.text
-    name = user_data.get('name')
 
-    await insert_mistake(mistake, id)
+    await insert_mistake(mistake, id_)
 
     await message.answer(text='Благодарю!\n\n'
                               'Теперь укажите подробную информацию о нарушении')
@@ -137,7 +120,6 @@ async def process_mistake_sent(message: Message, state: FSMContext):
 
 @router.message(StateFilter(FSMFillForm.fill_description))
 async def process_description_sent(message: Message, state: FSMContext):
-    #await state.update_data(description=message.text)
     low_level_button = InlineKeyboardButton(
         text='Низкий',
         callback_data='low'
@@ -156,10 +138,10 @@ async def process_description_sent(message: Message, state: FSMContext):
     markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
 
     user_data = await state.get_data()
-    id = user_data.get('id')
+    id_ = user_data.get('id')
     description = message.text
 
-    await insert_description(description, id)
+    await insert_description(description, id_)
 
     await message.answer(text='Благодарю!\n\n'
                               'Теперь укажите предполагаемый уровень опасности',
@@ -169,18 +151,13 @@ async def process_description_sent(message: Message, state: FSMContext):
 
 
 @router.callback_query(F.data.in_(['low', 'medium', 'high']))
-#message(StateFilter(FSMFillForm.fill_level),
-#            F.data.in_(['low', 'medium', 'high']))
 async def process_level_press(callback: CallbackQuery, state: FSMContext):
 
     user_data = await state.get_data()
-    id = user_data.get('id')
+    id_ = user_data.get('id')
     level = callback.data
 
-    await insert_level(level, id)
-    #await state.update_data(level=callback.data)
-
-    #await save_user_info(callback.message, state)
+    await insert_level(level, id_)
 
     await callback.message.delete()
 
@@ -200,14 +177,12 @@ async def warning_not_level(message: Message):
 
 @router.message(StateFilter(FSMFillForm.fill_place))
 async def process_place_sent(message: Message, state: FSMContext):
-    #await state.update_data(place=message.text)
 
     user_data = await state.get_data()
-    id = user_data.get('id')
+    id_ = user_data.get('id')
     place = message.text
 
-    await insert_place(place, id)
-    #await save_user_info(message, state)
+    await insert_place(place, id_)
 
     await message.answer(text='Благодарю!\n\n'
                               'Теперь загрузите фотографию нарушения')
@@ -218,16 +193,18 @@ async def process_place_sent(message: Message, state: FSMContext):
 async def process_photo_sent(message: Message,
                              state: FSMContext,
                              latest_photo: PhotoSize):
-    user_id = message.from_user.id
 
-    await state.update_data(
-        photo_unique_id=latest_photo.file_unique_id,
-        photo_id=latest_photo.file_id
-    )
+    file_id = latest_photo.file_id
+    file = await message.bot.get_file(file_id)
 
+    #photo_bytes = await message.bot.download_file(file.file_path)
+    user_data = await state.get_data()
+    id_ = user_data.get('id')
 
-    #user_dict[user_id] = await state.get_data()
-    #user_dict[latest_photo.from_user.id] = await state.get_data()
+    photo_url = f"https://api.telegram.org/file/bot{message.bot.token}/{file.file_path}"
+
+    await insert_photo(photo_url, id_)
+
     await state.clear()
     await message.answer(
         text='Благодарю! Ваша заявка зарегистрирована.\n'

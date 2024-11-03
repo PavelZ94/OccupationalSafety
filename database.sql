@@ -8,5 +8,5 @@ CREATE TABLE user_mistakes (
     description TEXT,
     level TEXT,
     place TEXT,
-    photo BYTEA
+    photo TEXT
 );
