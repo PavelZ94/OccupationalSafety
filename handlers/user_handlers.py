@@ -26,7 +26,8 @@ from lexicon.lexicon import (start_command_text,
                              accepted_description_text,
                              accepted_level_text,
                              warning_level_text,
-                             accepted_place_text)
+                             accepted_place_text,
+                             accepted_request_text)
 
 router = Router()
 
@@ -325,8 +326,4 @@ async def process_photo_sent(message: Message,
     await insert_photo(photo_url, id_)
 
     await state.clear()
-    await message.answer(
-        text=f'Благодарю! Ваша заявка зарегистрирована под номером {id_}.\n'
-        f'Сотрудники Отдела охраны труда обработают его в '
-        f'установленные сроки и сообщат о результатах рассмотрения'
-    )
+    await message.answer(text=accepted_request_text(id_))
