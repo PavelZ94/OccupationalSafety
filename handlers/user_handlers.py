@@ -13,15 +13,29 @@ from database.database import (insert_user_name,
                                insert_mistake,
                                insert_level,
                                insert_description,
-                               insert_place, insert_photo)
+                               insert_place,
+                               insert_photo)
+from lexicon.lexicon import (start_command_text,
+                             help_command_text,
+                             default_cancel_text,
+                             cancel_text,
+                             enter_name_text,
+                             accepted_name_text,
+                             warning_name_text,
+                             accepted_mistake_text,
+                             accepted_description_text,
+                             accepted_level_text,
+                             warning_level_text,
+                             accepted_place_text)
 
 router = Router()
 
 load_dotenv()
 
-BOT_TOKEN=os.getenv('BOT_TOKEN')
+BOT_TOKEN = os.getenv('BOT_TOKEN')
 
 bot = Bot(BOT_TOKEN)
+
 
 class FSMFillForm(StatesGroup):
 
@@ -32,78 +46,135 @@ class FSMFillForm(StatesGroup):
     fill_place = State()
     fill_date = State()
     upload_photo = State()
-    #So, need to add  yagpt question may be and help
 
 
 @router.message(CommandStart(), StateFilter(default_state))
 async def process_start_command(message: Message):
-    await message.answer(
-        text='Этот бот принимает заявки выявленных нарушений'
-            'требований охраны труда, промышленной и пожарной безопасности\n'
-            'Чтобы заявить о нарушении - отправьте команду - /mistake\n'
-            'Чтобы задать вопрос нейросети в области охраны труда - '
-            'отправьте команду - /bot\n'
-            'Чтобы вызвать справку - отправьте команду - /help'
-    )
+    """
+    Handler processing the start command.
+    It shows next options of using bot.
+
+    Args:
+        message: '/start' command.
+    State:
+        It is called from the default state.
+    """
+    await message.answer(text=start_command_text)
+
 
 @router.message(Command(commands='help'), StateFilter(default_state))
 async def process_help_command(message: Message):
-    await message.answer(
-        text='Программа «Near-miss» — это система учета и анализа инцидентов, которые могли бы привести к несчастным '
-             'случаям, но были предотвращены в последний момент.\n'
-             'Основной целью программы является предотвращение будущих инцидентов путем идентификации и устранения '
-             'потенциальных опасностей.\n'
-             'Несчастные случаи на производстве могут привести к тяжелым травмам, потере рабочей силы и, '
-             'в крайнем случае, к смерти.\n'
-             'Кроме того, они могут привести к существенным финансовым потерям для компании в виде штрафов, '
-             'компенсаций и потери репутации.'
-    )
+    """
+    Handler processing the help command.
+    Is shows definition of 'Near-miss'.
+
+    Args:
+        message: '/help' command.
+    State:
+        Default state.
+    """
+    await message.answer(text=help_command_text)
+
 
 @router.message(Command(commands='cancel'), StateFilter(default_state))
 async def process_cancel_command(message: Message):
-    await message.answer(
-        text='Отменять нечего.\n'
-             'Чтобы начать пользоваться ботом - '
-             'отправьте команду - /mistake'
-    )
+    """
+    Handler responding to an attempt to execute a cancel command from the default state.
+    It shows a message, that there is nothing to cancel in default state.
+
+    Args:
+        message: '/cancel' command.
+
+    State:
+        Default state.
+    """
+    await message.answer(text=default_cancel_text)
+
 
 @router.message(Command(commands='cancel'), ~StateFilter(default_state))
 async def process_cancel_command_state(message: Message, state: FSMContext):
-    await message.answer(
-        text='Вы вышли из формы заполнения заявки нарушений.\n'
-            'Чтобы снова перейти к заполнению заявки -'
-            'отправьте команду /mistake'
-    )
-    await  state.clear()
+    """
+    Handler responding to an attempt to execute a cancel command from all states except default state.
+    It shows next options of using the bot.
+
+    Args:
+        message: '/cancel' command.
+        state: all states except default state.
+
+    Next state: default state.
+    """
+    await message.answer(text=cancel_text)
+    await state.clear()
+
 
 @router.message(Command(commands='mistake'), StateFilter(default_state))
 async def process_mistake_command(message: Message, state: FSMContext):
-    await message.answer(text=' Пожалуйста, введите ваше имя')
+    """
+    Handler responding to the mistake command.
+    Prompts to enter a username in the next state.
+
+    Args:
+        message: '/mistake' command
+        state: default state.
+
+    Next state: fill name state.
+    """
+    await message.answer(text=enter_name_text)
     await state.set_state(FSMFillForm.fill_name)
 
+
 @router.message(StateFilter(FSMFillForm.fill_name), F.text.isalpha())
-async def process_name_sent(message:Message, state: FSMContext):
+async def process_name_sent(message: Message, state: FSMContext):
+    """
+    Handler accepting username.
+    When receiving a name, the data is checked for validity.
+    After adding information to the database, moves to the next state.
+
+    Args:
+        message: username.
+        state: fill name state.
+
+    Previous state: default state.
+    Next state: fill mistake state.
+    """
     user_id = message.from_user.id
     name = message.text
     generated_id = await insert_user_name(user_id, name)
 
     await state.update_data(name=name, id=generated_id)
-    await message.answer(text='Благодарю!\n\n'
-                              'Теперь укажите краткую информацию о нарушении')
+    await message.answer(text=accepted_name_text)
 
     await state.set_state(FSMFillForm.fill_mistake)
 
+
 @router.message(StateFilter(FSMFillForm.fill_name))
 async def warning_not_name(message: Message):
-    await message.answer(
-        text='То, что вы отправили не похоже на имя\n\n'
-             'Пожалуйста, введите ваше имя\n\n'
-             'Если вы хотите прервать заполнение анкеты - '
-             'отправьте команду /cancel'
-    )
+    """
+    Message that appears if the name does not pass the validity check.
+    It shows next options of using the bot.
+
+    Args:
+        message: not valid username.
+
+    Previous state: fill name state.
+    Next state: fill name state.
+    """
+    await message.answer(text=warning_name_text)
+
 
 @router.message(StateFilter(FSMFillForm.fill_mistake))
 async def process_mistake_sent(message: Message, state: FSMContext):
+    """
+    Handler accepting brief information about violation.
+    Prompts to enter a detailed description in the next state.
+
+    Args:
+        message: brief information about violation.
+        state: fill mistake state.
+
+    Previous state: fill name state.
+    Next state: fill description state.
+    """
 
     user_data = await state.get_data()
     id_ = user_data.get('id')
@@ -111,15 +182,24 @@ async def process_mistake_sent(message: Message, state: FSMContext):
 
     await insert_mistake(mistake, id_)
 
-    await message.answer(text='Благодарю!\n\n'
-                              'Теперь укажите подробную информацию о нарушении')
+    await message.answer(text=accepted_mistake_text)
 
     await state.set_state(FSMFillForm.fill_description)
 
-#NEED TO ADD HANDLER, CATCHING MISTAKE WITH MISTAKE ERROR
 
 @router.message(StateFilter(FSMFillForm.fill_description))
 async def process_description_sent(message: Message, state: FSMContext):
+    """
+    Handler accepting detailed description of violation.
+    Prompts to choose the importance level in the next state.
+
+    Args:
+        message: detailed description of violation.
+        state: fill description state.
+
+    Previous state: fill mistake state.
+    Next state: fill level state.
+    """
     low_level_button = InlineKeyboardButton(
         text='Низкий',
         callback_data='low'
@@ -143,8 +223,7 @@ async def process_description_sent(message: Message, state: FSMContext):
 
     await insert_description(description, id_)
 
-    await message.answer(text='Благодарю!\n\n'
-                              'Теперь укажите предполагаемый уровень опасности',
+    await message.answer(text=accepted_description_text,
                          reply_markup=markup)
 
     await state.set_state(FSMFillForm.fill_level)
@@ -152,7 +231,19 @@ async def process_description_sent(message: Message, state: FSMContext):
 
 @router.callback_query(F.data.in_(['low', 'medium', 'high']))
 async def process_level_press(callback: CallbackQuery, state: FSMContext):
+    """
+    Handler accepting importance level of violation.
+    User can choose supposed level from the inline buttons.
 
+    Prompts to enter location, premises number where the violation was recorded in the next state.
+
+    Args:
+        callback: callback with inline keyboard with 3 levels of importance.
+        state: fill level state.
+
+    Previous state: fill description state.
+    Next state: fill place state.
+    """
     user_data = await state.get_data()
     id_ = user_data.get('id')
     level = callback.data
@@ -161,53 +252,81 @@ async def process_level_press(callback: CallbackQuery, state: FSMContext):
 
     await callback.message.delete()
 
-    await callback.message.answer(
-        text='Благодарю! Укажите помещение/место нарушения'
-    )
+    await callback.message.answer(text=accepted_level_text)
     await state.set_state(FSMFillForm.fill_place)
+
 
 @router.message(StateFilter(FSMFillForm.fill_level))
 async def warning_not_level(message: Message):
-    await message.answer(
-        text='Пожалуйста, пользуйтесь кнопками '
-             'при выборе уровня опасности\n\n'
-             'Если вы хотите прервать '
-             'заполнение анкеты - отправьте команду /cancel'
-    )
+    """
+    Message that appears if the user does not use inline buttons
+    or enters invalid values.
+    It shows next options of using the bot.
+
+    Args:
+        message: not valid level chosen.
+
+    Previous state: fill level state.
+    Next state: fill level state.
+    """
+    await message.answer(text=warning_level_text)
+
 
 @router.message(StateFilter(FSMFillForm.fill_place))
 async def process_place_sent(message: Message, state: FSMContext):
+    """
+    Handler accepting location, premises number where the violation was recorded.
+    Prompts to upload the violation photo in the next state.
 
+    Args:
+        message: location, premises number where the violation was recorded
+        state: fill place state.
+
+    Previous state: fill level state.
+    Next state: upload photo state.
+    """
     user_data = await state.get_data()
     id_ = user_data.get('id')
     place = message.text
 
     await insert_place(place, id_)
 
-    await message.answer(text='Благодарю!\n\n'
-                              'Теперь загрузите фотографию нарушения')
+    await message.answer(text=accepted_place_text)
     await state.set_state(FSMFillForm.upload_photo)
 
+
 @router.message(StateFilter(FSMFillForm.upload_photo),
-            F.photo[-1].as_('latest_photo'))
+                F.photo[-1].as_('latest_photo'))
 async def process_photo_sent(message: Message,
                              state: FSMContext,
                              latest_photo: PhotoSize):
+    """
+    Handler accepting upload the violation photo.
+    It adds ing information to the database,
+    and informs the user about the successful completion of the request.
 
+    Args:
+        message: violation photo.
+        state: upload photo state.
+        latest_photo: violation photo.
+
+    Previous state: fill place state.
+    Next state: None.
+    """
     file_id = latest_photo.file_id
     file = await message.bot.get_file(file_id)
 
-    #photo_bytes = await message.bot.download_file(file.file_path)
     user_data = await state.get_data()
     id_ = user_data.get('id')
 
-    photo_url = f"https://api.telegram.org/file/bot{message.bot.token}/{file.file_path}"
+    photo_url = (f"https://api.telegram.org/file/bot"
+                 f"{message.bot.token}/{file.file_path}")
 
     await insert_photo(photo_url, id_)
 
     await state.clear()
     await message.answer(
-        text='Благодарю! Ваша заявка зарегистрирована.\n'
-        'Сотрудники Отдела охраны труда обработают его в '
-        'установленные сроки и сообщат о результатах рассмотрения'
+        text=f'Благодарю! Ваша заявка зарегистрирована под номером {id_}.\n'
+        f'Сотрудники Отдела охраны труда обработают его в '
+        f'установленные сроки и сообщат о результатах рассмотрения'
     )

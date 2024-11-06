@@ -9,8 +9,8 @@ from handlers import user_handlers
 from keyboards.main_menu import set_main_menu
 
 
-
 logger = logging.getLogger(__name__)
+
 
 async def main():
     logging.basicConfig(
@@ -35,4 +35,5 @@ async def main():
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
-asyncio.run(main())
+if __name__ == '__main__':
+    asyncio.run(main())
