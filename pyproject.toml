@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "occupationalsafetybot"
 version = "0.1.0"
-description = ""
-authors = ["Your Name <you@example.com>"]
+description = "Telegram bot, created with a purpose to commit violations of Occupational Safety"
+authors = ["Pavel94 <zhilinsky.pa@yandex.ru>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
@@ -13,6 +13,7 @@ aiogram = "^3.14.0"
 environs = "^11.0.0"
 python-dotenv = "^1.0.1"
 psycopg2-binary = "^2.9.10"
+flake8 = "^7.1.1"
 
 
 [build-system]

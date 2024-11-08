@@ -8,5 +8,6 @@ CREATE TABLE user_mistakes (
     description TEXT,
     level TEXT,
     place TEXT,
-    photo TEXT
+    photo TEXT,
+    timestamp TIMESTAMP
 );

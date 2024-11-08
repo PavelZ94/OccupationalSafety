@@ -2,6 +2,7 @@ import os
 import psycopg2
 from dotenv import load_dotenv
 import asyncpg
+import datetime
 
 load_dotenv()
 
@@ -49,10 +50,12 @@ async def insert_user_name(user_id: int, name: str):
 async def insert_mistake(mistake: str, id_: int):
     """
     Сheck the presence of a record at the specified ID.
-    If it exists - add the brief statement of the fixed violation to the database.
+    If it exists - add the brief statement of the fixed violation
+    to the database.
 
     Args:
-        mistake (str): A brief description of the violation recorded by the user.
+        mistake (str): A brief description of the violation
+    recorded by the user.
         id_ (int): message ID.
     """
     conn = await asyncpg.connect(DATABASE)
@@ -76,10 +79,12 @@ async def insert_mistake(mistake: str, id_: int):
 async def insert_description(description: str, id_: int):
     """
     Сheck the presence of a record at the specified ID.
-    If it exists - add the detailed description of the fixed violation to the database.
+    If it exists - add the detailed description of the fixed violation
+    to the database.
 
     Args:
-        description (str): A detailed description of the violation recorded by the user.
+        description (str): A detailed description of the violation
+    recorded by the user.
         id_ (int): message ID.
     """
     conn = await asyncpg.connect(DATABASE)
@@ -103,10 +108,12 @@ async def insert_description(description: str, id_: int):
 async def insert_level(level: str, id_: int):
     """
     Сheck the presence of a record at the specified ID.
-    If it exists - add the importance level of the fixed violation to the database.
+    If it exists - add the importance level of the fixed violation
+    to the database.
 
     Args:
-        level (str): A importance level of the violation recorded by the user.
+        level (str): A importance level of the violation
+    recorded by the user.
         id_ (int): message ID.
     """
     conn = await asyncpg.connect(DATABASE)
@@ -130,10 +137,12 @@ async def insert_level(level: str, id_: int):
 async def insert_place(place: str, id_: int):
     """
     Сheck the presence of a record at the specified ID.
-    If it exists - add the location, premises number where the violation was recorded to the database.
+    If it exists - add the location, premises number where the violation
+    was recorded to the database.
 
     Args:
-        place (str): location, premises number where the violation was recorded by the user.
+        place (str): location, premises number where the violation
+    was recorded by the user.
         id_ (int): message ID.
     """
     conn = await asyncpg.connect(DATABASE)
@@ -164,9 +173,11 @@ async def insert_photo(photo_url: str, id_: int):
         id_ (int): message ID.
     """
     conn = await asyncpg.connect(DATABASE)
+    current_time = datetime.datetime.now()
     await conn.execute('''
     UPDATE user_mistakes
-    SET photo = $1
-    WHERE id = $2''',
-                       photo_url, id_)
+    SET photo = $1, 
+    timestamp = $2
+    WHERE id = $3''',
+                       photo_url, current_time, id_)
     await conn.close()

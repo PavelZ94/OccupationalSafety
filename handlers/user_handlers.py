@@ -45,7 +45,6 @@ class FSMFillForm(StatesGroup):
     fill_description = State()
     fill_level = State()
     fill_place = State()
-    fill_date = State()
     upload_photo = State()
 
 
@@ -80,7 +79,8 @@ async def process_help_command(message: Message):
 @router.message(Command(commands='cancel'), StateFilter(default_state))
 async def process_cancel_command(message: Message):
     """
-    Handler responding to an attempt to execute a cancel command from the default state.
+    Handler responding to an attempt to execute a cancel command
+    from the default state.
     It shows a message, that there is nothing to cancel in default state.
 
     Args:
@@ -95,7 +95,8 @@ async def process_cancel_command(message: Message):
 @router.message(Command(commands='cancel'), ~StateFilter(default_state))
 async def process_cancel_command_state(message: Message, state: FSMContext):
     """
-    Handler responding to an attempt to execute a cancel command from all states except default state.
+    Handler responding to an attempt to execute a cancel command
+    from all states except default state.
     It shows next options of using the bot.
 
     Args:
@@ -236,7 +237,8 @@ async def process_level_press(callback: CallbackQuery, state: FSMContext):
     Handler accepting importance level of violation.
     User can choose supposed level from the inline buttons.
 
-    Prompts to enter location, premises number where the violation was recorded in the next state.
+    Prompts to enter location, premises number where the violation
+    was recorded in the next state.
 
     Args:
         callback: callback with inline keyboard with 3 levels of importance.
@@ -276,7 +278,8 @@ async def warning_not_level(message: Message):
 @router.message(StateFilter(FSMFillForm.fill_place))
 async def process_place_sent(message: Message, state: FSMContext):
     """
-    Handler accepting location, premises number where the violation was recorded.
+    Handler accepting location, premises number where the violation
+    was recorded.
     Prompts to upload the violation photo in the next state.
 
     Args:
