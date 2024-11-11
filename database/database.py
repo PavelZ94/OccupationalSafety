@@ -3,6 +3,7 @@ import psycopg2
 from dotenv import load_dotenv
 import asyncpg
 import datetime
+from aiogram.fsm.context import FSMContext
 
 load_dotenv()
 
@@ -176,8 +177,13 @@ async def insert_photo(photo_url: str, id_: int):
     current_time = datetime.datetime.now()
     await conn.execute('''
     UPDATE user_mistakes
-    SET photo = $1, 
+    SET photo = $1,
     timestamp = $2
     WHERE id = $3''',
                        photo_url, current_time, id_)
     await conn.close()
+
+
+async def get_user_id(state: FSMContext):
+    user_data = await state.get_data()
+    return user_data.get('id')

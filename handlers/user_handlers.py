@@ -14,7 +14,8 @@ from database.database import (insert_user_name,
                                insert_level,
                                insert_description,
                                insert_place,
-                               insert_photo)
+                               insert_photo,
+                               get_user_id)
 from lexicon.lexicon import (start_command_text,
                              help_command_text,
                              default_cancel_text,
@@ -178,8 +179,7 @@ async def process_mistake_sent(message: Message, state: FSMContext):
     Next state: fill description state.
     """
 
-    user_data = await state.get_data()
-    id_ = user_data.get('id')
+    id_ = await get_user_id(state)
     mistake = message.text
 
     await insert_mistake(mistake, id_)
@@ -219,8 +219,7 @@ async def process_description_sent(message: Message, state: FSMContext):
     ]
     markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
 
-    user_data = await state.get_data()
-    id_ = user_data.get('id')
+    id_ = await get_user_id(state)
     description = message.text
 
     await insert_description(description, id_)
@@ -247,8 +246,7 @@ async def process_level_press(callback: CallbackQuery, state: FSMContext):
     Previous state: fill description state.
     Next state: fill place state.
     """
-    user_data = await state.get_data()
-    id_ = user_data.get('id')
+    id_ = await get_user_id(state)
     level = callback.data
 
     await insert_level(level, id_)
@@ -289,8 +287,7 @@ async def process_place_sent(message: Message, state: FSMContext):
     Previous state: fill level state.
     Next state: upload photo state.
     """
-    user_data = await state.get_data()
-    id_ = user_data.get('id')
+    id_ = await get_user_id(state)
     place = message.text
 
     await insert_place(place, id_)
@@ -320,8 +317,7 @@ async def process_photo_sent(message: Message,
     file_id = latest_photo.file_id
     file = await message.bot.get_file(file_id)
 
-    user_data = await state.get_data()
-    id_ = user_data.get('id')
+    id_ = await get_user_id(state)
 
     photo_url = (f"https://api.telegram.org/file/bot"
                  f"{message.bot.token}/{file.file_path}")
