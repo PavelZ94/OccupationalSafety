@@ -28,7 +28,11 @@ from lexicon.lexicon import (start_command_text,
                              accepted_level_text,
                              warning_level_text,
                              accepted_place_text,
-                             accepted_request_text)
+                             accepted_request_text,
+                             warning_mistake_text,
+                             warning_description_text,
+                             warning_place_text,
+                             warning_photo_text)
 
 router = Router()
 
@@ -165,7 +169,7 @@ async def warning_not_name(message: Message):
     await message.answer(text=warning_name_text)
 
 
-@router.message(StateFilter(FSMFillForm.fill_mistake))
+@router.message(StateFilter(FSMFillForm.fill_mistake), F.text)
 async def process_mistake_sent(message: Message, state: FSMContext):
     """
     Handler receiving brief information about violation.
@@ -189,7 +193,22 @@ async def process_mistake_sent(message: Message, state: FSMContext):
     await state.set_state(FSMFillForm.fill_description)
 
 
-@router.message(StateFilter(FSMFillForm.fill_description))
+@router.message(StateFilter(FSMFillForm.fill_mistake))
+async def warning_not_mistake(message: Message):
+    """
+    Message that appears if the mistake does not pass the validity check.
+    It shows next options of using the bot.
+
+    Args:
+        message: not valid mistake.
+
+    Previous state: fill mistake state.
+    Next state: fill mistake state.
+    """
+    await message.answer(text=warning_mistake_text)
+
+
+@router.message(StateFilter(FSMFillForm.fill_description), F.text)
 async def process_description_sent(message: Message, state: FSMContext):
     """
     Handler receiving detailed description of violation.
@@ -228,6 +247,21 @@ async def process_description_sent(message: Message, state: FSMContext):
                          reply_markup=markup)
 
     await state.set_state(FSMFillForm.fill_level)
+
+
+@router.message(StateFilter(FSMFillForm.fill_description))
+async def warning_not_description(message: Message):
+    """
+    Message that appears if description does not pass the validity check.
+    It shows next options of using the bot.
+
+    Args:
+        message: not valid description.
+
+    Previous state: fill description state.
+    Next state: fill description state.
+    """
+    await message.answer(text=warning_description_text)
 
 
 @router.callback_query(F.data.in_(['low', 'medium', 'high']))
@@ -273,7 +307,7 @@ async def warning_not_level(message: Message):
     await message.answer(text=warning_level_text)
 
 
-@router.message(StateFilter(FSMFillForm.fill_place))
+@router.message(StateFilter(FSMFillForm.fill_place), F.text)
 async def process_place_sent(message: Message, state: FSMContext):
     """
     Handler receiving location, premises number where the violation
@@ -294,6 +328,21 @@ async def process_place_sent(message: Message, state: FSMContext):
 
     await message.answer(text=accepted_place_text)
     await state.set_state(FSMFillForm.upload_photo)
+
+
+@router.message(StateFilter(FSMFillForm.fill_place))
+async def warning_not_place(message: Message):
+    """
+    Message that appears if violation place does not pass the validity check.
+    It shows next options of using the bot.
+
+    Args:
+        message: not valid place.
+
+    Previous state: fill place state.
+    Next state: fill place state.
+    """
+    await message.answer(text=warning_place_text)
 
 
 @router.message(StateFilter(FSMFillForm.upload_photo),
@@ -326,3 +375,18 @@ async def process_photo_sent(message: Message,
 
     await state.clear()
     await message.answer(text=accepted_request_text(id_))
+
+
+@router.message(StateFilter(FSMFillForm.upload_photo))
+async def warning_not_photo(message: Message):
+    """
+    Message that appears if the user sends something instead of a photo.
+    It shows next options of using the bot.
+
+    Args:
+        message: not valid photo.
+
+    Previous state: upload photo state.
+    Next state: upload photo state.
+    """
+    await message.answer(text=warning_photo_text)
