@@ -129,7 +129,7 @@ async def process_mistake_command(message: Message, state: FSMContext):
 @router.message(StateFilter(FSMFillForm.fill_name), F.text.isalpha())
 async def process_name_sent(message: Message, state: FSMContext):
     """
-    Handler accepting username.
+    Handler receiving username.
     When receiving a name, the data is checked for validity.
     After adding information to the database, moves to the next state.
 
@@ -168,7 +168,7 @@ async def warning_not_name(message: Message):
 @router.message(StateFilter(FSMFillForm.fill_mistake))
 async def process_mistake_sent(message: Message, state: FSMContext):
     """
-    Handler accepting brief information about violation.
+    Handler receiving brief information about violation.
     Prompts to enter a detailed description in the next state.
 
     Args:
@@ -192,7 +192,7 @@ async def process_mistake_sent(message: Message, state: FSMContext):
 @router.message(StateFilter(FSMFillForm.fill_description))
 async def process_description_sent(message: Message, state: FSMContext):
     """
-    Handler accepting detailed description of violation.
+    Handler receiving detailed description of violation.
     Prompts to choose the importance level in the next state.
 
     Args:
@@ -233,7 +233,7 @@ async def process_description_sent(message: Message, state: FSMContext):
 @router.callback_query(F.data.in_(['low', 'medium', 'high']))
 async def process_level_press(callback: CallbackQuery, state: FSMContext):
     """
-    Handler accepting importance level of violation.
+    Handler receiving importance level of violation.
     User can choose supposed level from the inline buttons.
 
     Prompts to enter location, premises number where the violation
@@ -276,7 +276,7 @@ async def warning_not_level(message: Message):
 @router.message(StateFilter(FSMFillForm.fill_place))
 async def process_place_sent(message: Message, state: FSMContext):
     """
-    Handler accepting location, premises number where the violation
+    Handler receiving location, premises number where the violation
     was recorded.
     Prompts to upload the violation photo in the next state.
 
@@ -302,7 +302,7 @@ async def process_photo_sent(message: Message,
                              state: FSMContext,
                              latest_photo: PhotoSize):
     """
-    Handler accepting upload the violation photo.
+    Handler receiving upload the violation photo.
     It adds ing information to the database,
     and informs the user about the successful completion of the request.
 
