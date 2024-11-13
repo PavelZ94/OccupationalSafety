@@ -9,7 +9,7 @@ from lexicon.lexicon import (default_cancel_text,
                              warning_level_text,
                              warning_place_text,
                              warning_photo_text)
-from handlers.user_handlers import FSMFillForm
+from handlers.FSM import FSMFillForm
 
 
 router = Router()

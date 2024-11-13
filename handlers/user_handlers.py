@@ -26,24 +26,9 @@ from lexicon.lexicon import (start_command_text,
                              accepted_level_text,
                              accepted_place_text,
                              accepted_request_text)
+from handlers.FSM import FSMFillForm
 
 router = Router()
-
-load_dotenv()
-
-BOT_TOKEN = os.getenv('BOT_TOKEN')
-
-bot = Bot(BOT_TOKEN)
-
-
-class FSMFillForm(StatesGroup):
-
-    fill_name = State()
-    fill_mistake = State()
-    fill_description = State()
-    fill_level = State()
-    fill_place = State()
-    upload_photo = State()
 
 
 @router.message(CommandStart(), StateFilter(default_state))
