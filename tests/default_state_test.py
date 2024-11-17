@@ -1,74 +1,94 @@
 import pytest
+from unittest.mock import AsyncMock, MagicMock
 import os
-from aiogram import Bot, Dispatcher, types, Router
-from aiogram.enums import ParseMode
+from aiogram import Bot, Dispatcher, types
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.filters import Command
-from aiogram.types import Update, Message
-#from aiogram.utils import executor
-from unittest.mock import AsyncMock
-
-from django.core.files.storage import storages
-
-from handlers.user_handlers import process_start_command, router
+from aiogram.types import Message
+from aiogram.fsm.context import FSMContext
+from handlers.FSM import FSMFillForm
+from handlers.user_handlers import process_start_command, process_help_command, process_mistake_command
+from handlers.warning_handlers import process_cancel_command
 from lexicon.lexicon import (start_command_text,
                               help_command_text,
                               enter_name_text,
                               default_cancel_text,
                               cancel_text)
 
-class MockBot:
-    def __init__(self):
-        self.sent_messages = []
 
-    async def answer(self, message: str):
-        self.sent_messages.append(message)
-
-router = Router()
+@pytest.fixture
+def bot():
+    BOT_TOKEN = os.getenv('BOT_TOKEN')
+    return Bot(BOT_TOKEN)
 
 
 @pytest.fixture
-async def mock_bot():
-    return MockBot()
-
-#@pytest.fixture
-#def bot():
-#    BOT_TOKEN = os.getenv('BOT_TOKEN')
-#    return Bot(BOT_TOKEN)
-
-
-#@pytest.fixture
-#def dispatcher(bot):
-#    storage = MemoryStorage()
-#    dp = Dispatcher(storage=storage)
-#    dp.bot = bot
-#    return dp
-@pytest.fixture
-async def dispatcher(mock_bot):
+def dispatcher(bot):
     storage = MemoryStorage()
-    dp = Dispatcher(storage=storage)
-    dp.bot = mock_bot
-    dp.include_router(router)
+    dp = Dispatcher(bot, storage=storage)
     return dp
 
 
+@pytest.fixture
+def mock_message():
+    message = MagicMock(spec=Message)
+    message.answer = MagicMock()
+    return message
+
+
 @pytest.mark.asyncio
-async def test_start_handler(dispatcher, mock_bot):
-    message = types.Message(
-        message_id=1,
-        from_user=types.User(id=123, is_bot=False, first_name='Test'),
-        chat=types.Chat(id=123, type='private'),
-        date='2023-01-01T00:00:00Z',
-        text='/start'
-    )
+async def test_process_start_command(mock_message):
+    mock_chat = MagicMock()
+    mock_chat.id = 12345
 
-    #dispatcher.message.register(process_start_command, Command(commands=['start']))
+    mock_message.chat = mock_chat
+    mock_message.text = '/start'
+    mock_message.answer = AsyncMock()
 
-    update = Update(update_id=1, message=message)
+    await process_start_command(mock_message)
 
-    await dispatcher._process_update(mock_bot, update)
+    mock_message.answer.assert_called_once_with(text=start_command_text)
 
-    assert len(mock_bot.sent_messages) == 1
-    assert mock_bot.sent_messages[0] == start_command_text
-    #expected_response = start_command_text
-    #assert message.text == expected_response
+
+@pytest.mark.asyncio
+async def test_process_help_command(mock_message):
+    mock_chat = MagicMock()
+    mock_chat.id = 12345
+
+    mock_message.chat = mock_chat
+    mock_message.text = '/help'
+    mock_message.answer = AsyncMock()
+
+    await process_help_command(mock_message)
+
+    mock_message.answer.assert_called_once_with(text=help_command_text)
+
+
+@pytest.mark.asyncio
+async def test_process_cancel_command(mock_message):
+    mock_chat = MagicMock()
+    mock_chat.id = 12345
+
+    mock_message.chat = mock_chat
+    mock_message.text = '/cancel'
+    mock_message.answer = AsyncMock()
+
+    await process_cancel_command(mock_message)
+    mock_message.answer.assert_called_once_with(text=default_cancel_text)
+
+
+@pytest.mark.asyncio
+async def test_process_mistake_command(mock_message):
+    mock_chat = MagicMock()
+    mock_chat.id = 12345
+
+    mock_message.chat = mock_chat
+    mock_message.text = '/mistake'
+    mock_message.answer = AsyncMock()
+
+    mock_state = MagicMock(spec=FSMContext)
+
+    await process_mistake_command(mock_message, mock_state)
+    mock_message.answer.assert_called_once_with(text=enter_name_text)
+
+    mock_state.set_state.assert_called_once_with(FSMFillForm.fill_name)
+
