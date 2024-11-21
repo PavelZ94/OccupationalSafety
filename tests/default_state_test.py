@@ -1,18 +1,19 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 import os
-from aiogram import Bot, Dispatcher, types
+from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 from handlers.FSM import FSMFillForm
-from handlers.user_handlers import process_start_command, process_help_command, process_mistake_command
+from handlers.user_handlers import (process_start_command,
+                                    process_help_command,
+                                    process_mistake_command)
 from handlers.warning_handlers import process_cancel_command
 from lexicon.lexicon import (start_command_text,
-                              help_command_text,
-                              enter_name_text,
-                              default_cancel_text,
-                              cancel_text)
+                             help_command_text,
+                             enter_name_text,
+                             default_cancel_text)
 
 
 @pytest.fixture
@@ -91,4 +92,3 @@ async def test_process_mistake_command(mock_message):
     mock_message.answer.assert_called_once_with(text=enter_name_text)
 
     mock_state.set_state.assert_called_once_with(FSMFillForm.fill_name)
-
