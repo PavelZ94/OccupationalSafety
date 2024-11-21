@@ -1,5 +1,5 @@
 [![Maintainability](https://api.codeclimate.com/v1/badges/e0080a631100f636c310/maintainability)](https://codeclimate.com/github/PavelZ94/OccupationalSafety/maintainability)
-
+[![lint_check](https://github.com/PavelZ94/OccupationalSafety/actions/workflows/lint-check.yml/badge.svg)](https://github.com/PavelZ94/OccupationalSafety/actions/workflows/lint-check.yml)
 
 # OccupationalSafety Telegram Bot
 
