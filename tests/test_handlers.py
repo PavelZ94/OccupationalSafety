@@ -6,6 +6,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
+from database.database import insert_mistake
 from handlers.FSM import FSMFillForm
 from aiogram.fsm.state import default_state
 from handlers.user_handlers import (process_cancel_command_state,
@@ -97,12 +98,14 @@ async def test_process_mistake_sent(mock_message):
     mock_message.from_user = mock_user
 
     mock_message.chat = mock_chat
-    mock_message.text = 'Valid brief information'
+    mock_message.text = "A brief information"
     mock_message.answer = AsyncMock()
 
     mock_state = MagicMock(spec=FSMContext)
 
     mock_state.get_state.return_value = FSMFillForm.fill_mistake
+    with patch('database.database.insert_mistake', new_callable=AsyncMock) as mock_insert_mistake:
+        mock_insert_mistake.return_value = True
 
     await process_mistake_sent(mock_message, mock_state)
     mock_message.answer.assert_called_once_with(text=accepted_mistake_text)

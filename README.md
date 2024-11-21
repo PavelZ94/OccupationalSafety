@@ -1,3 +1,6 @@
+[![Maintainability](https://api.codeclimate.com/v1/badges/e0080a631100f636c310/maintainability)](https://codeclimate.com/github/PavelZ94/OccupationalSafety/maintainability)
+
+
 # OccupationalSafety Telegram Bot
 
 ## About
