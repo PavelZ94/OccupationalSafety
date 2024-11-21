@@ -5,7 +5,7 @@ update:
 	poetry update
 
 lint:
-	flake8
+	poetry run flake8 .
 
 .PHONY: run
 
