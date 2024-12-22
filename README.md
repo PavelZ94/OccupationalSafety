@@ -8,7 +8,6 @@ This is Telegram bot, created with a purpose to commit violations of Occupationa
 
 ## Usage
 
-To use this bot just send message to the https://t.me/OccupationalSafetyBot.
 
 It supports next messages:
 
